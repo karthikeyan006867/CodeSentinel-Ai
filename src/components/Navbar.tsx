@@ -113,16 +113,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Right: Actions and Dynamic Git Target Selector */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Download Report Dropdown Button */}
-          <div className="relative" ref={dropdownRef}>
+          <div className="relative shrink-0" ref={dropdownRef}>
             <button
+              id="export-report-button"
               onClick={() => {
                 if (!hasReviewResult && !isReviewing) return;
                 setShowExportMenu(!showExportMenu);
               }}
               disabled={isReviewing || !hasReviewResult}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium border transition-all shadow-sm ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all shadow-sm shrink-0 whitespace-nowrap select-none ${
                 isReviewing || !hasReviewResult
                   ? 'bg-slate-900/40 border-slate-800 text-slate-500 cursor-not-allowed'
                   : 'bg-gradient-to-r from-cyan-950/80 via-slate-900 to-blue-950/80 hover:from-cyan-900/90 hover:to-blue-900/90 text-cyan-200 border-cyan-500/40 hover:border-cyan-400 shadow-cyan-950/30'
@@ -136,61 +137,84 @@ export const Navbar: React.FC<NavbarProps> = ({
               }
             >
               {isReviewing ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400 shrink-0" />
               ) : (
-                <Download className="h-3.5 w-3.5 text-cyan-400" />
+                <Download className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
               )}
-              <span className="hidden sm:inline font-mono font-semibold">Download Report</span>
-              <span className="inline sm:hidden font-mono font-semibold text-[11px]">Export</span>
-              <ChevronDown className={`h-3 w-3 text-cyan-400/80 transition-transform duration-150 ${showExportMenu ? 'rotate-180' : ''}`} />
+              <span className="hidden sm:inline font-semibold">Export Report</span>
+              <span className="inline sm:hidden font-semibold text-[11px]">Export</span>
+              <ChevronDown className={`h-3 w-3 text-cyan-400/80 transition-transform duration-200 shrink-0 ${showExportMenu ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown Menu */}
             {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-64 sm:w-72 rounded-xl bg-[#0c1220] border border-cyan-500/30 shadow-2xl shadow-black/90 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3 py-1.5 border-b border-slate-800">
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-                    Export Review Findings
+              <div 
+                id="export-report-dropdown"
+                className="absolute left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-24px)] rounded-xl bg-[#0c1220] border border-cyan-500/30 shadow-2xl shadow-black/90 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150"
+              >
+                <div className="px-3.5 py-2.5 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold flex items-center gap-1.5">
+                      <Download className="h-3 w-3 text-cyan-400 shrink-0" />
+                      <span>Export Report</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      Structured audit & CI/CD artifacts
+                    </div>
                   </div>
-                  <div className="text-[11px] text-slate-300">
-                    Structured audit & documentation files
-                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border shrink-0 ${
+                    hasReviewResult 
+                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/30' 
+                      : 'bg-slate-800 text-slate-500 border-slate-700'
+                  }`}>
+                    {hasReviewResult ? 'Ready' : 'Pending'}
+                  </span>
                 </div>
 
-                <div className="p-1 space-y-1">
+                <div className="p-1.5 space-y-1">
                   <button
+                    id="export-markdown-btn"
                     onClick={() => handleExport('markdown')}
-                    className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-800/80 transition-colors group"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-800/80 transition-colors group border border-transparent hover:border-slate-700/60"
                   >
-                    <div className="p-1.5 rounded-md bg-cyan-950/60 border border-cyan-500/30 text-cyan-400 group-hover:text-cyan-300 mt-0.5">
-                      <FileText className="h-4 w-4" />
+                    <div className="w-8 h-8 rounded-lg bg-cyan-950/70 border border-cyan-500/30 text-cyan-400 group-hover:text-cyan-300 flex items-center justify-center shrink-0">
+                      <FileText className="h-4 w-4 shrink-0" />
                     </div>
-                    <div>
-                      <div className="text-xs font-semibold text-slate-200 group-hover:text-white flex items-center gap-1.5">
-                        <span>Markdown Report</span>
-                        <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">.md</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-slate-200 group-hover:text-white truncate">
+                          Markdown Report
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 shrink-0">
+                          .md
+                        </span>
                       </div>
-                      <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
-                        Formatted for GitHub PR comments, docs, and wikis
-                      </div>
+                      <p className="text-[11px] text-slate-400 leading-tight mt-0.5 truncate">
+                        Formatted for GitHub PR comments & docs
+                      </p>
                     </div>
                   </button>
 
                   <button
+                    id="export-json-btn"
                     onClick={() => handleExport('json')}
-                    className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-800/80 transition-colors group"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-slate-800/80 transition-colors group border border-transparent hover:border-slate-700/60"
                   >
-                    <div className="p-1.5 rounded-md bg-purple-950/60 border border-purple-500/30 text-purple-400 group-hover:text-purple-300 mt-0.5">
-                      <FileCode2 className="h-4 w-4" />
+                    <div className="w-8 h-8 rounded-lg bg-purple-950/70 border border-purple-500/30 text-purple-400 group-hover:text-purple-300 flex items-center justify-center shrink-0">
+                      <FileCode2 className="h-4 w-4 shrink-0" />
                     </div>
-                    <div>
-                      <div className="text-xs font-semibold text-slate-200 group-hover:text-white flex items-center gap-1.5">
-                        <span>Structured JSON</span>
-                        <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-purple-950 text-purple-400 border border-purple-800">.json</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-slate-200 group-hover:text-white truncate">
+                          Structured JSON
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-400 border border-purple-800 shrink-0">
+                          .json
+                        </span>
                       </div>
-                      <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
-                        Complete machine-readable audit schema & AST vectors
-                      </div>
+                      <p className="text-[11px] text-slate-400 leading-tight mt-0.5 truncate">
+                        Complete machine-readable audit schema & AST
+                      </p>
                     </div>
                   </button>
                 </div>

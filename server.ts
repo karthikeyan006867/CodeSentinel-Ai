@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
-import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 
 dotenv.config();
@@ -10,6 +9,25 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
+
+// Vercel serverless rewrite compatibility: normalize path if prefix was stripped
+app.use((req, res, next) => {
+  if (!req.url.startsWith('/api')) {
+    const matchedPath = req.headers['x-matched-path'] as string | undefined;
+    if (matchedPath && matchedPath.startsWith('/api')) {
+      req.url = matchedPath;
+    } else {
+      const knownPrefixes = ['/review', '/autofix', '/history', '/health', '/gcp-metrics', '/webhook'];
+      for (const prefix of knownPrefixes) {
+        if (req.url.startsWith(prefix)) {
+          req.url = '/api' + req.url;
+          break;
+        }
+      }
+    }
+  }
+  next();
+});
 
 // Initialize Gemini SDK with User-Agent header as required
 let aiClient: GoogleGenAI | null = null;
@@ -805,6 +823,7 @@ app.post('/api/webhook/github', (req, res) => {
 // Vite middleware for dev or static serving for prod
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -823,4 +842,11 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only start standalone server if not running in a serverless environment (like Vercel)
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
+export { app };
+
