@@ -2,6 +2,22 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/review",
+      "destination": "/api/review"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/api/history",
+      "destination": "/api/history"
+    },
+    {
+      "source": "/api/gcp-metrics",
+      "destination": "/api/gcp-metrics"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index"
     }

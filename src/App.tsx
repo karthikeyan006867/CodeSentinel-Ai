@@ -200,7 +200,8 @@ export default function App() {
       });
 
       if (!res.ok) {
-        throw new Error(`Review failed with status ${res.status}`);
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || `Review failed with HTTP ${res.status}`);
       }
 
       const data: CodeReviewResult = await res.json();
@@ -217,9 +218,9 @@ export default function App() {
       }
 
       fetchHistory();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error running review:', err);
-      showToast('Static fallback review active.');
+      showToast(err?.message ? `Notice: ${err.message}` : 'Review request could not be completed.');
     } finally {
       setIsReviewing(false);
     }
