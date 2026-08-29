@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   GitBranch, 
@@ -29,14 +29,22 @@ export const GitCIModal: React.FC<GitCIModalProps> = ({
   onClose,
   onTriggerWebhookSim,
   isSimulatingWebhook,
-  gitOwner = 'org-or-username',
+  gitOwner = 'karthikeyan006867',
   setGitOwner,
-  gitRepo = 'code-reviewer-service',
+  gitRepo = '24-7-intelligent-code-reviewer',
   setGitRepo
 }) => {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
-  const [localOwner, setLocalOwner] = useState(gitOwner || 'developer');
-  const [localRepo, setLocalRepo] = useState(gitRepo || 'intelligent-code-reviewer');
+  const [localOwner, setLocalOwner] = useState(gitOwner || 'karthikeyan006867');
+  const [localRepo, setLocalRepo] = useState(gitRepo || '24-7-intelligent-code-reviewer');
+
+  useEffect(() => {
+    if (gitOwner) setLocalOwner(gitOwner);
+  }, [gitOwner]);
+
+  useEffect(() => {
+    if (gitRepo) setLocalRepo(gitRepo);
+  }, [gitRepo]);
 
   if (!isOpen) return null;
 

@@ -13,7 +13,8 @@ import {
   GitBranch, 
   Code2,
   Wand2,
-  Cpu
+  Cpu,
+  User
 } from 'lucide-react';
 
 import { Navbar } from './components/Navbar';
@@ -26,6 +27,7 @@ import { PipelineTracker } from './components/PipelineTracker';
 import { GCPArchitectureModal } from './components/GCPArchitectureModal';
 import { HistoricalLearningModal } from './components/HistoricalLearningModal';
 import { GitCIModal } from './components/GitCIModal';
+import { CreatorModal } from './components/CreatorModal';
 
 import { CODE_PRESETS, CodePreset } from './data/presets';
 import { 
@@ -48,9 +50,9 @@ export default function App() {
   const [branch, setBranch] = useState<string>('main');
   const [prNumber, setPrNumber] = useState<number>(42);
 
-  // Dynamic Git Target State (no hardcoded usernames!)
-  const [gitOwner, setGitOwner] = useState<string>(() => localStorage.getItem('git_owner') || 'developer');
-  const [gitRepo, setGitRepo] = useState<string>(() => localStorage.getItem('git_repo') || 'code-reviewer-service');
+  // Dynamic Git Target State
+  const [gitOwner, setGitOwner] = useState<string>(() => localStorage.getItem('git_owner') || 'karthikeyan006867');
+  const [gitRepo, setGitRepo] = useState<string>(() => localStorage.getItem('git_repo') || '24-7-intelligent-code-reviewer');
 
   // Detected Language State (ANN / Lexical)
   const [detectedLang, setDetectedLang] = useState<DetectedLanguage | null>(() => 
@@ -71,6 +73,7 @@ export default function App() {
   const [showArchModal, setShowArchModal] = useState<boolean>(false);
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [showGitModal, setShowGitModal] = useState<boolean>(false);
+  const [showCreatorModal, setShowCreatorModal] = useState<boolean>(false);
   const [isSimulatingWebhook, setIsSimulatingWebhook] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -512,14 +515,29 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer - Generic White-Labeled */}
+      {/* Footer with Creator Area & Actions */}
       <footer className="w-full border-t border-slate-800/80 bg-[#080c14] py-6 px-4 sm:px-8 mt-12 text-xs font-mono text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-cyan-400" />
             <span className="text-slate-300 font-semibold">The 24/7 Intelligent Code Reviewer</span>
             <span>•</span>
             <span className="text-cyan-400">ANN AST Classifier + Gemini Flash Lite</span>
+          </div>
+
+          {/* Down Creator Area: Interactive Creator Button */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowCreatorModal(true)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-950/80 via-slate-900 to-indigo-950/80 hover:from-cyan-900/90 hover:to-indigo-900/90 text-cyan-300 hover:text-white border border-cyan-500/40 hover:border-cyan-400 text-xs font-mono font-bold transition-all shadow-md shadow-cyan-950/40 group"
+              title="Click to open Creator Profile and Project Architecture Details"
+            >
+              <User className="h-3.5 w-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span>Creator: Karthikeyan G</span>
+              <span className="text-[10px] text-cyan-400/80 bg-cyan-900/50 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                Info
+              </span>
+            </button>
           </div>
 
           <div className="flex items-center gap-4 text-slate-400">
@@ -543,6 +561,11 @@ export default function App() {
       </footer>
 
       {/* Modals */}
+      <CreatorModal
+        isOpen={showCreatorModal}
+        onClose={() => setShowCreatorModal(false)}
+      />
+
       <GCPArchitectureModal
         isOpen={showArchModal}
         onClose={() => setShowArchModal(false)}

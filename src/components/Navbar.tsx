@@ -24,8 +24,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHistory,
   onOpenGitModal,
   pipelineRunning,
-  gitOwner = 'developer',
-  gitRepo = 'code-reviewer'
+  gitOwner = 'karthikeyan006867',
+  gitRepo = '24-7-intelligent-code-reviewer'
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-[#080c14]/90 backdrop-blur-md px-4 lg:px-8 py-3 transition-colors">
