@@ -6,7 +6,36 @@ dotenv.config();
 
 const app = express();
 
+// CORS & Preflight handling
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// Vercel Serverless environment body protection:
+// If Vercel has already consumed the stream to populate req.body, flag req._body = true
+// to prevent express.json() from hanging on an already-read stream.
+app.use((req, res, next) => {
+  if (req.body !== undefined && req.body !== null) {
+    (req as any)._body = true;
+    if (typeof req.body === 'string') {
+      try {
+        req.body = JSON.parse(req.body);
+      } catch {
+        // preserve string body if not valid JSON
+      }
+    }
+  }
+  next();
+});
+
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Vercel serverless rewrite compatibility: normalize path
 app.use((req, res, next) => {
@@ -812,6 +841,42 @@ router.post('/webhook/github', (req, res) => {
 // Mount router on BOTH '/api' and '/' for complete Vercel & Express compatibility
 app.use('/api', router);
 app.use('/', router);
+
+// Global Error Handling Middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[API Server Error]:', err);
+  if (!res.headersSent) {
+    res.status(err?.status || 500).json({
+      error: err?.message || 'Internal Server Error',
+      status: err?.status || 500
+    });
+  }
+});
+
+/**
+ * Serverless execution bridge for Vercel functions:
+ * Wraps Express in a Promise that resolves ONLY after the HTTP response
+ * has been fully flushed to the client (res.on('finish')), preventing premature
+ * Lambda termination and 500 FUNCTION_INVOCATION_FAILED errors on Vercel.
+ */
+export function runServerless(req: any, res: any, targetUrl?: string): Promise<void> {
+  if (targetUrl) {
+    req.url = targetUrl;
+  }
+  return new Promise<void>((resolve, reject) => {
+    res.on('finish', () => resolve());
+    res.on('close', () => resolve());
+    res.on('error', (err: any) => reject(err));
+    try {
+      app(req, res, (err: any) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
 
 export default app;
 export { app };

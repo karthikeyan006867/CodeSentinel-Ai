@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import app from '../src/server/app';
+import { runServerless } from '../src/server/app';
 
-export default function handler(req: IncomingMessage, res: ServerResponse) {
-  req.url = '/api/review';
-  return app(req, res);
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
+  return runServerless(req, res, '/api/review');
 }
+
