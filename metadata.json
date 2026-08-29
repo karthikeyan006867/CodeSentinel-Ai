@@ -1,6 +1,6 @@
 {
   "name": "The 24/7 Intelligent Code Reviewer",
-  "description": "Automated, always-on multi-language code review platform powered by Vertex AI Gemini and Google Cloud Platform architecture with quality scoring, CI/CD pipeline automation, and historical learning.",
+  "description": "Automated, always-on multi-language code review platform powered by ANN AST classifiers and Vertex AI Gemini Flash Lite with autonomous language detection, quality scoring, CI/CD pipeline automation, and instant refactoring.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

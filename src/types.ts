@@ -59,6 +59,21 @@ export interface GCPPipelineStep {
   traceId?: string;
 }
 
+export interface NeuralAnalysisMeta {
+  detectedLanguage: string;
+  languageConfidence: number;
+  detectionMethod: 'ast_token_neural' | 'lexical_heuristic' | 'file_extension';
+  annConfidence: number;
+  tokenVectorDim: number;
+  neuralDefectVectors: {
+    securityRisk: number;
+    performanceRisk: number;
+    concurrencyRisk: number;
+    maintainabilityRisk: number;
+  };
+  controller: string;
+}
+
 export interface CodeReviewResult {
   id: string;
   timestamp: string;
@@ -74,6 +89,7 @@ export interface CodeReviewResult {
   summary: ExecutiveSummary;
   fullRefactoredCode: string;
   pipelineSteps: GCPPipelineStep[];
+  neuralMeta?: NeuralAnalysisMeta;
 }
 
 export interface HistoricalRun {

@@ -11,8 +11,9 @@ import {
   Activity, 
   Cloud, 
   GitBranch, 
-  ExternalLink,
-  Code2
+  Code2,
+  Wand2,
+  Cpu
 } from 'lucide-react';
 
 import { Navbar } from './components/Navbar';
@@ -34,17 +35,27 @@ import {
   HistoricalRun, 
   RecurringAntiPattern 
 } from './types';
+import { detectCodeLanguage, DetectedLanguage } from './utils/languageDetector';
 
 export default function App() {
   // Preset & Editor State
   const defaultPreset = CODE_PRESETS[0];
   const [selectedPresetId, setSelectedPresetId] = useState<string>(defaultPreset.id);
   const [code, setCode] = useState<string>(defaultPreset.code);
-  const [language, setLanguage] = useState<string>(defaultPreset.language);
+  const [language, setLanguage] = useState<string>('auto'); // Defaults to intelligent auto-detection!
   const [filename, setFilename] = useState<string>(defaultPreset.filename);
   const [reviewMode, setReviewMode] = useState<ReviewMode>('full_360');
   const [branch, setBranch] = useState<string>('main');
   const [prNumber, setPrNumber] = useState<number>(42);
+
+  // Dynamic Git Target State (no hardcoded usernames!)
+  const [gitOwner, setGitOwner] = useState<string>(() => localStorage.getItem('git_owner') || 'developer');
+  const [gitRepo, setGitRepo] = useState<string>(() => localStorage.getItem('git_repo') || 'code-reviewer-service');
+
+  // Detected Language State (ANN / Lexical)
+  const [detectedLang, setDetectedLang] = useState<DetectedLanguage | null>(() => 
+    detectCodeLanguage(defaultPreset.code, defaultPreset.filename)
+  );
 
   // Review states & Results
   const [isReviewing, setIsReviewing] = useState<boolean>(false);
@@ -68,10 +79,27 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Run review on mount so user immediately sees rich, functional evaluation
+  // Run automatic language detection whenever code or filename changes
+  useEffect(() => {
+    const result = detectCodeLanguage(code, filename);
+    setDetectedLang(result);
+  }, [code, filename]);
+
+  // Persist Git Target when changed
+  const updateGitOwner = (newOwner: string) => {
+    setGitOwner(newOwner);
+    localStorage.setItem('git_owner', newOwner);
+  };
+
+  const updateGitRepo = (newRepo: string) => {
+    setGitRepo(newRepo);
+    localStorage.setItem('git_repo', newRepo);
+  };
+
+  // Run initial evaluation on mount
   useEffect(() => {
     fetchHistory();
-    runReview(defaultPreset.code, defaultPreset.language, defaultPreset.filename);
+    runReview(defaultPreset.code, 'auto', defaultPreset.filename);
   }, []);
 
   const fetchHistory = async () => {
@@ -109,9 +137,8 @@ export default function App() {
   const handleSelectPreset = (preset: CodePreset) => {
     setSelectedPresetId(preset.id);
     setCode(preset.code);
-    setLanguage(preset.language);
     setFilename(preset.filename);
-    runReview(preset.code, preset.language, preset.filename);
+    runReview(preset.code, language, preset.filename);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,23 +146,15 @@ export default function App() {
     if (!file) return;
 
     setFilename(file.name);
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    if (ext === 'py') setLanguage('python');
-    else if (ext === 'ts' || ext === 'tsx') setLanguage('typescript');
-    else if (ext === 'go') setLanguage('go');
-    else if (ext === 'rs') setLanguage('rust');
-    else if (ext === 'java') setLanguage('java');
-    else if (ext === 'sql') setLanguage('sql');
-    else if (ext === 'tf') setLanguage('terraform');
-    else if (file.name.toLowerCase().includes('docker')) setLanguage('dockerfile');
-
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
       if (content) {
         setCode(content);
-        showToast(`Uploaded ${file.name}. Reviewing now.`);
-        runReview(content, language, file.name);
+        const autoLang = detectCodeLanguage(content, file.name);
+        setDetectedLang(autoLang);
+        showToast(`Uploaded ${file.name}. Detected ${autoLang.name}. Reviewing now.`);
+        runReview(content, 'auto', file.name);
       }
     };
     reader.readAsText(file);
@@ -144,10 +163,16 @@ export default function App() {
   const runReview = async (
     targetCode: string = code,
     targetLang: string = language,
-    targetFile: string = filename
+    targetFile: string = filename,
+    autoApplyFix: boolean = false
   ) => {
     setIsReviewing(true);
     setActiveIssueId(null);
+
+    // If language is set to 'auto', resolve through ANN detector
+    const resolvedLang = targetLang === 'auto' 
+      ? (detectedLang?.id || detectCodeLanguage(targetCode, targetFile).id) 
+      : targetLang;
 
     try {
       const res = await fetch('/api/review', {
@@ -155,10 +180,10 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: targetCode,
-          language: targetLang,
+          language: resolvedLang,
           filename: targetFile,
           reviewMode,
-          author: 'karthikeyan006867',
+          author: gitOwner,
           branch,
           prNumber
         })
@@ -173,12 +198,35 @@ export default function App() {
       if (data.issues && data.issues.length > 0) {
         setActiveIssueId(data.issues[0].id);
       }
+
+      // If auto-apply was requested, replace code immediately
+      if (autoApplyFix && data.fullRefactoredCode) {
+        setCode(data.fullRefactoredCode);
+        setActiveTab('editor');
+        showToast('⚡ Automatically analyzed & applied surgical fixes!');
+      }
+
       fetchHistory();
     } catch (err) {
       console.error('Error running review:', err);
       showToast('Static fallback review active.');
     } finally {
       setIsReviewing(false);
+    }
+  };
+
+  // Instant Auto-Fix handler (User clicks "Auto-Fix Code")
+  const handleAutoFix = () => {
+    if (reviewResult?.fullRefactoredCode) {
+      setCode(reviewResult.fullRefactoredCode);
+      setActiveTab('editor');
+      showToast('⚡ Applied automated refactorings to editor!');
+      setTimeout(() => {
+        runReview(reviewResult.fullRefactoredCode, language, filename, false);
+      }, 200);
+    } else {
+      showToast('Analyzing code with ANN & generating auto-fixes...');
+      runReview(code, language, filename, true);
     }
   };
 
@@ -225,8 +273,8 @@ export default function App() {
           'x-github-event': 'push'
         },
         body: JSON.stringify({
-          repository: { full_name: 'karthikeyan006867/24-7-intelligent-code-reviewer' },
-          sender: { login: 'karthikeyan006867' },
+          repository: { full_name: `${gitOwner}/${gitRepo}` },
+          sender: { login: gitOwner },
           head_commit: { id: 'a9b2c3d', message: 'ci(pipeline): trigger automated commit check' }
         })
       });
@@ -242,13 +290,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* Top Navigation */}
+    <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+      {/* Dynamic Navigation Bar */}
       <Navbar
         onOpenArchitecture={() => setShowArchModal(true)}
         onOpenHistory={() => setShowHistoryModal(true)}
         onOpenGitModal={() => setShowGitModal(true)}
         pipelineRunning={isReviewing}
+        gitOwner={gitOwner}
+        gitRepo={gitRepo}
       />
 
       {/* Main Container */}
@@ -257,45 +307,47 @@ export default function App() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#0d1322]/90 border border-slate-800/90 rounded-2xl p-5 sm:px-6 shadow-2xl">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/80 px-2.5 py-0.5 rounded-full border border-cyan-500/30">
-                GCP SERVERLESS & VERTEX AI
+              <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/80 px-2.5 py-0.5 rounded-full border border-cyan-500/30 flex items-center gap-1.5">
+                <Cpu className="h-3 w-3" />
+                ANN + VERTEX AI GEMINI FLASH LITE
               </span>
               <span className="text-xs text-slate-400">
-                Autonomous 24/7 Multi-Language Quality Evaluation & CI/CD Gatekeeper
+                Autonomous Multi-Language Quality Evaluation & CI/CD Gatekeeper
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1.5 flex items-center gap-2">
               <span>24/7 Intelligent Code Reviewer</span>
               <span className="text-xs font-mono font-normal text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
-                v2.4 Production
+                v2.5 Autonomous
               </span>
             </h1>
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
+              onClick={handleAutoFix}
+              disabled={isReviewing}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-xs font-mono font-bold text-white shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              <span>⚡ Auto-Fix Code</span>
+            </button>
+
+            <button
               onClick={() => setShowGitModal(true)}
               className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300 hover:text-white transition-all flex items-center gap-2 shadow-sm"
             >
               <GitBranch className="h-4 w-4 text-emerald-400" />
-              <span>Git CI/CD</span>
+              <span>{gitOwner}/{gitRepo}</span>
             </button>
 
             <button
-              onClick={() => setShowArchModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300 hover:text-white transition-all flex items-center gap-2 shadow-sm"
-            >
-              <Cloud className="h-4 w-4 text-cyan-400" />
-              <span>Architecture</span>
-            </button>
-
-            <button
-              onClick={() => runReview()}
+              onClick={() => runReview(code, language, filename, false)}
               disabled={isReviewing}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-xs font-mono font-bold text-white shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all"
             >
               <Sparkles className="h-4 w-4" />
-              <span>{isReviewing ? 'Analyzing with Vertex AI...' : 'Run Review'}</span>
+              <span>{isReviewing ? 'Analyzing...' : 'Run Review'}</span>
             </button>
           </div>
         </div>
@@ -314,9 +366,12 @@ export default function App() {
           setBranch={setBranch}
           prNumber={prNumber}
           setPrNumber={setPrNumber}
-          onRunReview={() => runReview()}
+          onRunReview={() => runReview(code, language, filename, false)}
+          onAutoFix={handleAutoFix}
           isReviewing={isReviewing}
           onFileUpload={handleFileUpload}
+          detectedLang={detectedLang}
+          hasRefactoredCode={!!reviewResult?.fullRefactoredCode}
         />
 
         {/* Quality Rating Card & Executive Summary */}
@@ -324,6 +379,7 @@ export default function App() {
           <RatingCard
             rating={reviewResult.rating}
             summary={reviewResult.summary}
+            neuralMeta={reviewResult.neuralMeta}
           />
         )}
 
@@ -362,14 +418,14 @@ export default function App() {
             }`}
           >
             <Activity className="h-3.5 w-3.5" />
-            <span>GCP Pipeline</span>
+            <span>ANN & GCP Gate</span>
           </button>
         </div>
 
         {/* Main Tab 1: Dual Column Editor + Issues List */}
         {activeTab === 'editor' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column: Monaco-Style Code Editor (7 cols) */}
+            {/* Left Column: Code Editor (7 cols) */}
             <div className="lg:col-span-7 h-[640px]">
               <CodeEditor
                 code={code}
@@ -379,6 +435,8 @@ export default function App() {
                 issues={reviewResult?.issues || []}
                 activeIssueId={activeIssueId}
                 onSelectIssue={(iss) => setActiveIssueId(iss.id)}
+                onAutoFix={handleAutoFix}
+                detectedLangName={detectedLang?.name}
               />
             </div>
 
@@ -405,7 +463,7 @@ export default function App() {
           />
         )}
 
-        {/* Main Tab 3: Detailed GCP Telemetry & Pipeline */}
+        {/* Main Tab 3: Detailed Telemetry & Pipeline */}
         {activeTab === 'telemetry' && reviewResult && (
           <div className="space-y-4">
             <PipelineTracker 
@@ -415,20 +473,20 @@ export default function App() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
               <div className="p-4 rounded-xl bg-[#0d1322] border border-slate-800 space-y-1">
-                <span className="text-slate-400 text-[10px] uppercase">Execution Model</span>
-                <div className="text-sm font-bold text-cyan-300">Vertex AI Gemini 3.7 Flash</div>
-                <p className="text-[11px] text-slate-500">Low-latency structured reasoning pipeline</p>
+                <span className="text-slate-400 text-[10px] uppercase">Cognitive Controller</span>
+                <div className="text-sm font-bold text-cyan-300">Vertex AI Gemini Flash Lite</div>
+                <p className="text-[11px] text-slate-500">Low-latency high-throughput review controller</p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#0d1322] border border-slate-800 space-y-1">
-                <span className="text-slate-400 text-[10px] uppercase">Pub/Sub Queue Status</span>
-                <div className="text-sm font-bold text-emerald-400">Zero Drop Guarantee</div>
-                <p className="text-[11px] text-slate-500">Decoupled queue with dead-letter fallback</p>
+                <span className="text-slate-400 text-[10px] uppercase">ANN AST Classifier</span>
+                <div className="text-sm font-bold text-emerald-400">512-dim Embeddings</div>
+                <p className="text-[11px] text-slate-500">Language auto-detection & defect vector scoring</p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#0d1322] border border-slate-800 space-y-1">
                 <span className="text-slate-400 text-[10px] uppercase">Durable Storage</span>
-                <div className="text-sm font-bold text-yellow-300">Google Cloud Firestore</div>
+                <div className="text-sm font-bold text-yellow-300">Cloud Firestore</div>
                 <p className="text-[11px] text-slate-500">Indexed commit hashes, issues & scores</p>
               </div>
             </div>
@@ -454,33 +512,31 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
+      {/* Footer - Generic White-Labeled */}
       <footer className="w-full border-t border-slate-800/80 bg-[#080c14] py-6 px-4 sm:px-8 mt-12 text-xs font-mono text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-cyan-400" />
-            <span className="text-slate-400">The 24/7 Intelligent Code Reviewer</span>
+            <span className="text-slate-300 font-semibold">The 24/7 Intelligent Code Reviewer</span>
             <span>•</span>
-            <span>Managed GCP & Vertex AI Gemini</span>
+            <span className="text-cyan-400">ANN AST Classifier + Gemini Flash Lite</span>
           </div>
 
           <div className="flex items-center gap-4 text-slate-400">
-            <a 
-              href="https://karthikeyang.vercel.app" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-cyan-400 hover:underline flex items-center gap-1"
+            <button 
+              onClick={() => setShowGitModal(true)} 
+              className="hover:text-emerald-300 text-slate-300 flex items-center gap-1 transition-colors"
             >
-              <span>Portfolio Reference (karthikeyang.vercel.app)</span>
-              <ExternalLink className="h-3 w-3" />
-            </a>
-            <span>•</span>
-            <button onClick={() => setShowGitModal(true)} className="hover:text-white transition-colors">
-              GitHub (karthikeyan006867)
+              <GitBranch className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Target: {gitOwner}/{gitRepo}</span>
             </button>
             <span>•</span>
-            <button onClick={() => setShowArchModal(true)} className="hover:text-white transition-colors">
+            <button onClick={() => setShowArchModal(true)} className="hover:text-cyan-300 transition-colors">
               GCP Architecture
+            </button>
+            <span>•</span>
+            <button onClick={() => setShowHistoryModal(true)} className="hover:text-indigo-300 transition-colors">
+              Historical Learning
             </button>
           </div>
         </div>
@@ -507,6 +563,10 @@ export default function App() {
         onClose={() => setShowGitModal(false)}
         onTriggerWebhookSim={handleTriggerWebhookSim}
         isSimulatingWebhook={isSimulatingWebhook}
+        gitOwner={gitOwner}
+        setGitOwner={updateGitOwner}
+        gitRepo={gitRepo}
+        setGitRepo={updateGitRepo}
       />
     </div>
   );

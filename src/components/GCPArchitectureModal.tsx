@@ -32,19 +32,19 @@ export const GCPArchitectureModal: React.FC<GCPArchitectureModalProps> = ({
       name: 'Cloud Source Repositories / Git',
       category: 'Source Control & Triggers',
       icon: <GitCommit className="h-5 w-5 text-cyan-400" />,
-      description: 'Receives developer commits, pull requests, and webhooks from GitHub / GitLab repository `karthikeyan006867/24-7-intelligent-code-reviewer`.'
+      description: 'Receives developer commits, pull requests, and webhooks from configured GitHub / GitLab repositories via Cloud Build pub/sub triggers.'
     },
     {
       name: 'Cloud Build',
       category: 'CI/CD Pipeline Automation',
       icon: <Layers className="h-5 w-5 text-amber-400" />,
-      description: 'Triggers automated review containers and quality checks on every main commit or pull request event before packaging container images.'
+      description: 'Triggers automated review containers, AST token embeddings, and quality checks on every main commit or pull request event.'
     },
     {
       name: 'Cloud Pub/Sub',
       category: 'Asynchronous Decoupling',
       icon: <Radio className="h-5 w-5 text-indigo-400" />,
-      description: 'Guarantees reliable, decoupled asynchronous task queues between high-velocity Git webhooks and the Vertex AI inference engine.'
+      description: 'Guarantees reliable, decoupled asynchronous task queues between high-velocity Git webhooks and the review inference engine.'
     },
     {
       name: 'Cloud Run',
@@ -53,10 +53,10 @@ export const GCPArchitectureModal: React.FC<GCPArchitectureModalProps> = ({
       description: 'Hosts the 24/7 reviewer backend service with automatic scale-to-zero when idle and burst scaling under massive commit spikes.'
     },
     {
-      name: 'Vertex AI Gemini Models',
-      category: 'Multi-Modal LLM Inference',
+      name: 'Vertex AI Gemini (Gemini Flash Lite)',
+      category: 'ANN & Cognitive Controller',
       icon: <Cpu className="h-5 w-5 text-cyan-300" />,
-      description: 'Gemini 3.7 Flash powers multi-language code comprehension, vulnerability detection, Big-O analysis, and production-ready refactoring.'
+      description: 'Gemini Flash Lite controller orchestrates neural token embeddings, vulnerability detection, Big-O analysis, and automated surgical code refactoring.'
     },
     {
       name: 'Cloud Firestore',
@@ -154,8 +154,8 @@ export const GCPArchitectureModal: React.FC<GCPArchitectureModalProps> = ({
 
             <div className="p-2.5 rounded-lg bg-slate-900 border border-cyan-500/40 text-cyan-300 min-w-[120px] shadow-lg shadow-cyan-500/10">
               <Cpu className="h-4 w-4 mx-auto mb-1 text-cyan-400" />
-              <div className="font-bold text-[11px]">Vertex AI Gemini</div>
-              <div className="text-[9px] text-slate-400">Gemini 3.7 Flash</div>
+              <div className="font-bold text-[11px]">ANN + Gemini Lite</div>
+              <div className="text-[9px] text-slate-400">Gemini Flash Lite</div>
             </div>
             <span className="text-slate-500">➔</span>
 

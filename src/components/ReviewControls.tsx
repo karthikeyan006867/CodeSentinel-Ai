@@ -1,18 +1,18 @@
 import React from 'react';
 import { 
-  Play, 
   Sparkles, 
   Code2, 
   Sliders, 
   Upload, 
   GitPullRequest, 
-  CheckCircle2, 
-  AlertTriangle, 
   Flame, 
-  Layers
+  Cpu,
+  Wand2,
+  CheckCircle2
 } from 'lucide-react';
 import { CODE_PRESETS, CodePreset } from '../data/presets';
 import { ReviewMode } from '../types';
+import { DetectedLanguage } from '../utils/languageDetector';
 
 interface ReviewControlsProps {
   language: string;
@@ -28,14 +28,19 @@ interface ReviewControlsProps {
   prNumber: number;
   setPrNumber: (pr: number) => void;
   onRunReview: () => void;
+  onAutoFix: () => void;
   isReviewing: boolean;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  detectedLang?: DetectedLanguage | null;
+  hasRefactoredCode?: boolean;
 }
 
 const LANGUAGES = [
-  { id: 'typescript', name: 'TypeScript', ext: '.ts' },
+  { id: 'auto', name: '✨ Auto-Detect (ANN / Lexical)', ext: '' },
   { id: 'python', name: 'Python', ext: '.py' },
-  { id: 'go', name: 'Go', ext: '.go' },
+  { id: 'typescript', name: 'TypeScript', ext: '.ts' },
+  { id: 'javascript', name: 'JavaScript', ext: '.js' },
+  { id: 'go', name: 'Go (Golang)', ext: '.go' },
   { id: 'rust', name: 'Rust', ext: '.rs' },
   { id: 'dockerfile', name: 'Dockerfile', ext: '' },
   { id: 'terraform', name: 'Terraform (GCP)', ext: '.tf' },
@@ -58,8 +63,11 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
   prNumber,
   setPrNumber,
   onRunReview,
+  onAutoFix,
   isReviewing,
-  onFileUpload
+  onFileUpload,
+  detectedLang,
+  hasRefactoredCode
 }) => {
   return (
     <div className="w-full rounded-2xl bg-[#0d1322] border border-slate-800/80 p-4 sm:p-5 shadow-xl shadow-black/20 space-y-4">
@@ -68,7 +76,7 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
         <div className="flex items-center gap-2">
           <Flame className="h-4 w-4 text-amber-400" />
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-            Automated Scenario Presets:
+            Defect Presets:
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -94,22 +102,31 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
       </div>
 
       {/* Main configuration controls */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {/* Language selector */}
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Code2 className="h-3.5 w-3.5 text-cyan-400" />
-            Language
-          </label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
+        {/* Language selector with Auto-Detect (3 cols) */}
+        <div className="lg:col-span-3 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Code2 className="h-3.5 w-3.5 text-cyan-400" />
+              Language
+            </label>
+            {detectedLang && (
+              <span className="text-[10px] font-mono text-emerald-400">
+                {Math.round(detectedLang.confidence * 100)}% Match
+              </span>
+            )}
+          </div>
           <select
             value={language}
             onChange={(e) => {
               const selected = e.target.value;
               setLanguage(selected);
-              const langObj = LANGUAGES.find(l => l.id === selected);
-              if (langObj) {
-                const baseName = filename.split('.')[0] || 'service';
-                setFilename(`${baseName}${langObj.ext}`);
+              if (selected !== 'auto') {
+                const langObj = LANGUAGES.find(l => l.id === selected);
+                if (langObj && langObj.ext) {
+                  const baseName = filename.split('.')[0] || 'service';
+                  setFilename(`${baseName}${langObj.ext}`);
+                }
               }
             }}
             className="w-full bg-[#080c14] border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-cyan-500/50 font-mono transition-colors"
@@ -122,8 +139,8 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
           </select>
         </div>
 
-        {/* Review Focus Mode */}
-        <div className="space-y-1.5">
+        {/* Review Focus Mode (3 cols) */}
+        <div className="lg:col-span-3 space-y-1.5">
           <label className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <Sliders className="h-3.5 w-3.5 text-indigo-400" />
             Analysis Engine Mode
@@ -134,14 +151,14 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
             className="w-full bg-[#080c14] border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/50 font-mono transition-colors"
           >
             <option value="full_360">⚡ Full 360° Comprehensive</option>
-            <option value="security_hardening">🛡️ Deep Security & Vulnerability</option>
+            <option value="security_hardening">🛡️ Deep Security & Vulnerabilities</option>
             <option value="performance_scalability">🚀 Performance & Concurrency</option>
             <option value="clean_architecture">🧹 Clean Architecture & SOLID</option>
           </select>
         </div>
 
-        {/* Target Filename */}
-        <div className="space-y-1.5">
+        {/* Target Filename (2 cols) */}
+        <div className="lg:col-span-2 space-y-1.5">
           <label className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
             Source File
           </label>
@@ -154,57 +171,34 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
           />
         </div>
 
-        {/* Git Branch & PR */}
-        <div className="space-y-1.5">
+        {/* Git Branch & PR (2 cols) */}
+        <div className="lg:col-span-2 space-y-1.5">
           <label className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <GitPullRequest className="h-3.5 w-3.5 text-emerald-400" />
-            Branch & PR#
+            Branch & PR
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <input
               type="text"
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
-              className="w-2/3 bg-[#080c14] border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-slate-600 font-mono"
+              className="w-3/5 bg-[#080c14] border border-slate-800 text-slate-200 text-xs rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-slate-600 font-mono"
               placeholder="main"
             />
             <input
               type="number"
               value={prNumber}
               onChange={(e) => setPrNumber(parseInt(e.target.value) || 1)}
-              className="w-1/3 bg-[#080c14] border border-slate-800 text-slate-200 text-xs rounded-xl px-2 py-2.5 focus:outline-none focus:border-slate-600 font-mono text-center"
+              className="w-2/5 bg-[#080c14] border border-slate-800 text-slate-200 text-xs rounded-xl px-1.5 py-2.5 focus:outline-none focus:border-slate-600 font-mono text-center"
               placeholder="42"
             />
           </div>
         </div>
 
-        {/* Execute Button */}
-        <div className="flex items-end gap-2">
-          <button
-            onClick={onRunReview}
-            disabled={isReviewing}
-            className={`w-full py-2.5 px-4 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg ${
-              isReviewing
-                ? 'bg-cyan-950/60 text-cyan-400 border border-cyan-800/60 cursor-not-allowed'
-                : 'bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-cyan-500/20 hover:shadow-cyan-500/30'
-            }`}
-          >
-            {isReviewing ? (
-              <>
-                <span className="h-3.5 w-3.5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></span>
-                <span>Reviewing...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                <span>Run 24/7 Review</span>
-              </>
-            )}
-          </button>
-
-          {/* Upload file trigger */}
+        {/* Upload file trigger (2 cols on sm, 2 cols on lg) */}
+        <div className="lg:col-span-2 flex items-center gap-2">
           <label 
-            className="cursor-pointer p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-400 hover:text-cyan-300 transition-colors flex items-center justify-center shrink-0"
+            className="cursor-pointer p-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-400 hover:text-cyan-300 transition-colors flex items-center justify-center shrink-0 w-11 h-11"
             title="Upload source file from disk"
           >
             <Upload className="h-4 w-4" />
@@ -214,7 +208,61 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
               onChange={onFileUpload}
             />
           </label>
+
+          <button
+            onClick={onRunReview}
+            disabled={isReviewing}
+            className={`flex-1 h-11 px-3 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md ${
+              isReviewing
+                ? 'bg-cyan-950/60 text-cyan-400 border border-cyan-800/60 cursor-not-allowed'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 hover:border-cyan-500/50'
+            }`}
+          >
+            {isReviewing ? (
+              <>
+                <span className="h-3 w-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></span>
+                <span>Reviewing</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                <span>Review</span>
+              </>
+            )}
+          </button>
         </div>
+      </div>
+
+      {/* Intelligent Status Bar & Auto-Fix Banner */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-800/60 text-xs font-mono">
+        <div className="flex items-center gap-2 text-slate-400 flex-wrap">
+          <span className="flex items-center gap-1 text-cyan-300 font-semibold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/30">
+            <Cpu className="h-3.5 w-3.5 text-cyan-400" />
+            ANN AST: {detectedLang ? `${detectedLang.name} (${Math.round(detectedLang.confidence * 100)}%)` : 'Active'}
+          </span>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <span className="text-slate-400 text-[11px]">
+            Controller: <span className="text-slate-300">Vertex AI Gemini Flash Lite</span>
+          </span>
+          {detectedLang?.detectedFeatures && detectedLang.detectedFeatures.length > 0 && (
+            <>
+              <span className="text-slate-600 hidden md:inline">•</span>
+              <span className="text-[10px] text-slate-500 hidden md:inline">
+                Tokens: {detectedLang.detectedFeatures.slice(0, 3).join(', ')}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Instant Auto-Fix Action */}
+        <button
+          onClick={onAutoFix}
+          disabled={isReviewing}
+          className="w-full sm:w-auto px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-mono text-xs font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all"
+        >
+          <Wand2 className="h-3.5 w-3.5" />
+          <span>⚡ Auto-Fix Code (ANN + Gemini Lite)</span>
+        </button>
       </div>
     </div>
   );

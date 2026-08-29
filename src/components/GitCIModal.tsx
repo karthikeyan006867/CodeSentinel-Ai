@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { 
   X, 
   GitBranch, 
-  Github, 
   Terminal, 
   Copy, 
   Check, 
   Play, 
   CheckCircle2, 
-  ExternalLink,
-  Layers,
-  ArrowRight
+  Layers, 
+  Cpu, 
+  Server,
+  Sparkles
 } from 'lucide-react';
 
 interface GitCIModalProps {
@@ -18,15 +18,25 @@ interface GitCIModalProps {
   onClose: () => void;
   onTriggerWebhookSim: () => void;
   isSimulatingWebhook: boolean;
+  gitOwner?: string;
+  setGitOwner?: (owner: string) => void;
+  gitRepo?: string;
+  setGitRepo?: (repo: string) => void;
 }
 
 export const GitCIModal: React.FC<GitCIModalProps> = ({
   isOpen,
   onClose,
   onTriggerWebhookSim,
-  isSimulatingWebhook
+  isSimulatingWebhook,
+  gitOwner = 'org-or-username',
+  setGitOwner,
+  gitRepo = 'code-reviewer-service',
+  setGitRepo
 }) => {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [localOwner, setLocalOwner] = useState(gitOwner || 'developer');
+  const [localRepo, setLocalRepo] = useState(gitRepo || 'intelligent-code-reviewer');
 
   if (!isOpen) return null;
 
@@ -36,26 +46,41 @@ export const GitCIModal: React.FC<GitCIModalProps> = ({
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
-  const gitPushScript = `# 1. Initialize git and add all files
+  const handleOwnerChange = (val: string) => {
+    setLocalOwner(val);
+    if (setGitOwner) setGitOwner(val);
+  };
+
+  const handleRepoChange = (val: string) => {
+    setLocalRepo(val);
+    if (setGitRepo) setGitRepo(val);
+  };
+
+  const targetRemote = `https://github.com/${localOwner || 'user'}/${localRepo || 'repo'}.git`;
+
+  const gitPushScript = `# 1. Initialize git & add project files
 git init
 git add .
-git commit -m "feat: initial release of 24/7 Intelligent Code Reviewer on GCP"
+git commit -m "feat: automated 24/7 intelligent code reviewer pipeline"
 
-# 2. Add remote to your GitHub account (karthikeyan006867)
+# 2. Add remote target (${localOwner}/${localRepo})
 git branch -M main
-git remote add origin https://github.com/karthikeyan006867/24-7-intelligent-code-reviewer.git
+git remote add origin ${targetRemote}
 
-# 3. Push to main branch (This will automatically trigger GitHub Actions CI/CD)
+# 3. Push to main branch (triggers ANN + Gemini Lite automated gate)
 git push -u origin main`;
 
-  const vercelDeployScript = `# Vercel CLI deployment (Production ready)
-npm i -g vercel
-vercel login
-vercel --prod`;
+  const gcpDeployScript = `# Build & deploy directly to Cloud Run container service
+gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/code-reviewer
+gcloud run deploy code-reviewer \\
+  --image gcr.io/$(gcloud config get-value project)/code-reviewer \\
+  --platform managed \\
+  --region us-central1 \\
+  --allow-unauthenticated`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-3xl rounded-2xl bg-[#0d1322] border border-slate-700/80 shadow-2xl p-6 space-y-6 my-8">
+      <div className="relative w-full max-w-3xl rounded-2xl bg-[#0d1322] border border-slate-700/80 shadow-2xl p-6 space-y-5 my-8">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
@@ -64,10 +89,10 @@ vercel --prod`;
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                Git Repository & CI/CD Pipeline Automation
+                Git CI/CD Pipeline & Webhook Gate
               </h2>
               <p className="text-xs text-slate-400">
-                Push to GitHub <span className="text-cyan-300 font-mono">karthikeyan006867</span> & trigger automated checks on every main branch commit
+                Automated continuous evaluation powered by ANN AST features & Gemini Flash Lite
               </p>
             </div>
           </div>
@@ -80,8 +105,48 @@ vercel --prod`;
           </button>
         </div>
 
+        {/* User Git Target Configuration Area */}
+        <div className="p-4 rounded-xl bg-[#090d16] border border-slate-800 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono font-bold uppercase text-cyan-400 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Configure Your Git Target
+            </span>
+            <span className="text-[11px] font-mono text-slate-500">
+              Zero Hardcoding • Dynamic Remote
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-mono text-slate-400 block mb-1">
+                GitHub / GitLab Username or Org
+              </label>
+              <input
+                type="text"
+                value={localOwner}
+                onChange={(e) => handleOwnerChange(e.target.value)}
+                placeholder="e.g. your-username or team"
+                className="w-full bg-[#060810] border border-slate-700 text-cyan-300 text-xs rounded-xl px-3 py-2 font-mono focus:outline-none focus:border-cyan-500/60"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-mono text-slate-400 block mb-1">
+                Repository Name
+              </label>
+              <input
+                type="text"
+                value={localRepo}
+                onChange={(e) => handleRepoChange(e.target.value)}
+                placeholder="e.g. intelligent-code-reviewer"
+                className="w-full bg-[#060810] border border-slate-700 text-cyan-300 text-xs rounded-xl px-3 py-2 font-mono focus:outline-none focus:border-cyan-500/60"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Live Webhook Trigger Test */}
-        <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/40 space-y-3">
+        <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/40 space-y-2">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
               <span className="text-xs font-mono font-bold uppercase text-emerald-400 flex items-center gap-1.5">
@@ -89,7 +154,7 @@ vercel --prod`;
                 Live Git Webhook & Pub/Sub Test
               </span>
               <p className="text-xs text-slate-300 mt-0.5">
-                Simulate an incoming GitHub commit webhook payload to test the Cloud Run and Vertex AI Gemini pipeline.
+                Simulate commit webhook payload for <span className="font-mono text-emerald-300">{localOwner}/{localRepo}</span>.
               </p>
             </div>
 
@@ -118,7 +183,7 @@ vercel --prod`;
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono font-bold uppercase text-cyan-400 flex items-center gap-2">
               <Terminal className="h-4 w-4" />
-              1. Push to GitHub (karthikeyan006867)
+              1. Git Push Commands ({localOwner}/{localRepo})
             </span>
             <button
               onClick={() => copyToClipboard(gitPushScript, 'git')}
@@ -132,46 +197,29 @@ vercel --prod`;
               ) : (
                 <>
                   <Copy className="h-3 w-3" />
-                  <span>Copy Shell Script</span>
+                  <span>Copy Script</span>
                 </>
               )}
             </button>
           </div>
 
-          <pre className="p-3.5 rounded-xl bg-[#060810] border border-slate-800 font-mono text-xs text-cyan-200 overflow-x-auto">
+          <pre className="p-3 rounded-xl bg-[#060810] border border-slate-800 font-mono text-xs text-cyan-200 overflow-x-auto">
             <code>{gitPushScript}</code>
           </pre>
         </div>
 
-        {/* CI/CD Configuration Details */}
-        <div className="space-y-2">
-          <span className="text-xs font-mono font-bold uppercase text-slate-300 flex items-center gap-2">
-            <Layers className="h-4 w-4 text-amber-400" />
-            2. Configured CI/CD Automation (`.github/workflows/ci-cd.yml`)
-          </span>
-          <div className="p-3.5 rounded-xl bg-[#090d16] border border-slate-800 text-xs text-slate-300 space-y-1.5">
-            <div className="flex items-center gap-2 text-emerald-400 font-mono text-[11px]">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>Trigger: `on.push.branches: [ main ]` and `on.pull_request.branches: [ main ]`</span>
-            </div>
-            <p className="text-slate-400 text-[11px]">
-              The pre-configured workflow file runs linting, type-checking, production build bundling, automated Gemini code quality scoring, and signals deployment status back to GitHub checks.
-            </p>
-          </div>
-        </div>
-
-        {/* Vercel Deployment Section */}
+        {/* Cloud Run Deployment Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono font-bold uppercase text-indigo-400 flex items-center gap-2">
-              <ExternalLink className="h-4 w-4" />
-              3. Vercel Deployment (`vercel.json` included)
+              <Server className="h-4 w-4" />
+              2. Production Cloud Run Service Deployment
             </span>
             <button
-              onClick={() => copyToClipboard(vercelDeployScript, 'vercel')}
+              onClick={() => copyToClipboard(gcpDeployScript, 'cloudrun')}
               className="flex items-center gap-1 text-[11px] font-mono text-slate-400 hover:text-indigo-300 transition-colors"
             >
-              {copiedSection === 'vercel' ? (
+              {copiedSection === 'cloudrun' ? (
                 <>
                   <Check className="h-3 w-3 text-emerald-400" />
                   <span className="text-emerald-400">Copied</span>
@@ -179,28 +227,23 @@ vercel --prod`;
               ) : (
                 <>
                   <Copy className="h-3 w-3" />
-                  <span>Copy Vercel Commands</span>
+                  <span>Copy Commands</span>
                 </>
               )}
             </button>
           </div>
 
           <pre className="p-3 rounded-xl bg-[#060810] border border-slate-800 font-mono text-xs text-indigo-200 overflow-x-auto">
-            <code>{vercelDeployScript}</code>
+            <code>{gcpDeployScript}</code>
           </pre>
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-800 text-xs text-slate-400">
-          <a 
-            href="https://github.com/karthikeyan006867" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-cyan-400 hover:underline font-mono"
-          >
-            <Github className="h-4 w-4" />
-            <span>github.com/karthikeyan006867</span>
-          </a>
+        <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs text-slate-400 font-mono">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Cpu className="h-4 w-4 text-purple-400" />
+            <span>ANN AST Tokenizer • Vertex AI Gemini Flash Lite</span>
+          </div>
 
           <button
             onClick={onClose}

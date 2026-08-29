@@ -5,10 +5,9 @@ import {
   Cloud, 
   GitBranch, 
   History, 
-  Terminal, 
-  ExternalLink,
-  Activity,
-  Github
+  Sparkles,
+  Layers,
+  Settings
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -16,13 +15,17 @@ interface NavbarProps {
   onOpenHistory: () => void;
   onOpenGitModal: () => void;
   pipelineRunning: boolean;
+  gitOwner?: string;
+  gitRepo?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenArchitecture,
   onOpenHistory,
   onOpenGitModal,
-  pipelineRunning
+  pipelineRunning,
+  gitOwner = 'developer',
+  gitRepo = 'code-reviewer'
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-[#080c14]/90 backdrop-blur-md px-4 lg:px-8 py-3 transition-colors">
@@ -41,18 +44,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               <h1 className="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2 font-mono">
                 24/7 REVIEWER
                 <span className="hidden sm:inline-block text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
-                  GCP • Vertex AI
+                  ANN + Gemini Lite
                 </span>
               </h1>
             </div>
             <p className="text-xs text-slate-400 hidden md:block">
-              Always-on autonomous code reviewer & quality gatekeeper
+              Continuous neural AST analysis, vulnerability gate & surgical refactoring
             </p>
           </div>
         </div>
 
         {/* Center: System Status Indicator */}
-        <div className="hidden lg:flex items-center gap-4 bg-slate-900/70 border border-slate-800 px-3 py-1.5 rounded-full text-xs text-slate-300">
+        <div className="hidden lg:flex items-center gap-3 bg-slate-900/70 border border-slate-800 px-3 py-1.5 rounded-full text-xs text-slate-300">
           <div className="flex items-center gap-2">
             <span className={`h-2 w-2 rounded-full ${pipelineRunning ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></span>
             <span className="font-mono font-medium">
@@ -61,17 +64,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <span className="text-slate-600">|</span>
           <div className="flex items-center gap-1.5 text-slate-400">
-            <Cloud className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Cloud Run</span>
+            <Cpu className="h-3.5 w-3.5 text-purple-400" />
+            <span>ANN / ML Tokens</span>
           </div>
           <span className="text-slate-600">|</span>
           <div className="flex items-center gap-1.5 text-slate-400">
-            <Cpu className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Gemini 3.7 Flash</span>
+            <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+            <span>Gemini Flash Lite</span>
           </div>
         </div>
 
-        {/* Right: Actions and User Profile */}
+        {/* Right: Actions and Dynamic Git Target Selector */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onOpenArchitecture}
@@ -91,36 +94,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">Historical Learning</span>
           </button>
 
+          {/* Dynamic Git Target Area */}
           <button
             onClick={onOpenGitModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-cyan-500/20 text-xs font-medium text-emerald-300 border border-emerald-500/30 transition-all shadow-sm"
-            title="CI/CD Pipeline & GitHub Setup"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-cyan-500/20 text-xs font-medium text-emerald-300 border border-emerald-500/30 transition-all shadow-sm"
+            title="Configure Git Target Repository"
           >
             <GitBranch className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="font-mono">CI/CD & Git</span>
+            <div className="text-left font-mono">
+              <span className="text-[10px] text-slate-400 block sm:hidden">Git</span>
+              <span className="hidden sm:inline text-xs text-slate-200">
+                {gitOwner}/{gitRepo}
+              </span>
+            </div>
+            <Settings className="h-3 w-3 text-slate-400 ml-1" />
           </button>
-
-          {/* User Portfolio link */}
-          <a
-            href="https://karthikeyang.vercel.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-800 group"
-            title="Created for Karthikeyan G (karthikeyan006867)"
-          >
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-cyan-600 to-indigo-600 p-[1px]">
-              <div className="h-full w-full rounded-full bg-[#0b0f19] flex items-center justify-center text-xs font-bold text-cyan-300">
-                KG
-              </div>
-            </div>
-            <div className="hidden xl:block text-left">
-              <div className="text-xs font-semibold text-slate-200 group-hover:text-cyan-300 transition-colors flex items-center gap-1">
-                karthikeyan006867
-                <ExternalLink className="h-2.5 w-2.5 opacity-60" />
-              </div>
-              <div className="text-[10px] text-slate-400 font-mono">Portfolio Reference</div>
-            </div>
-          </a>
         </div>
       </div>
     </header>
