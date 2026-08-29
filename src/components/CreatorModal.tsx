@@ -41,79 +41,104 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({ isOpen, onClose }) =
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-3xl rounded-2xl bg-[#0d1322] border border-slate-700/80 shadow-2xl p-6 sm:p-7 space-y-6 my-8 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 text-cyan-400 shadow-md">
-              <User className="h-6 w-6" />
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start animate-in fade-in duration-200">
+      <div className="relative w-full max-w-3xl rounded-2xl bg-[#0d1322] border border-slate-700/80 shadow-2xl my-2 sm:my-6 overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Sticky Top Header: Always visible at the very top */}
+        <div className="sticky top-0 z-30 bg-[#0d1322]/95 backdrop-blur-md px-4 sm:px-6 py-3.5 border-b border-slate-800 flex items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 text-cyan-400 shrink-0">
+              <User className="h-5 w-5" />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                Creator Profile & Project Blueprint
-              </h2>
-              <p className="text-xs text-slate-400">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+                  Karthikeyan G
+                </h2>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 shrink-0">
+                  Creator & Architect
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 truncate">
                 Architectural vision & credentials for the 24/7 Intelligent Code Reviewer
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-            title="Close"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Creator Info Card */}
-        <div className="p-4 sm:p-5 rounded-xl bg-[#090d16] border border-cyan-500/30 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30">
-                  Creator & Architect
-                </span>
-                <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-mono">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Verified
-                </span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-black text-white mt-1 tracking-tight">
-                Karthikeyan G
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Google Cloud Platform • Intelligent Code Analysis • Serverless Architectures
-              </p>
-            </div>
-
-            {/* Portfolio Link Button */}
+          <div className="flex items-center gap-2 shrink-0">
             <a
               href="https://karthikeyang.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-mono text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all shrink-0 group"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-mono text-xs font-bold shadow-md shadow-cyan-500/20 transition-all group"
             >
-              <Globe className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-              <span>Visit Portfolio</span>
-              <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+              <Globe className="h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />
+              <span className="hidden sm:inline">Visit Portfolio</span>
+              <span className="inline sm:hidden">Portfolio</span>
+              <ExternalLink className="h-3 w-3 opacity-80" />
             </a>
-          </div>
 
-          <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-3 text-xs font-mono text-slate-400">
-            <span className="text-slate-500">Portfolio URL:</span>
-            <a 
-              href="https://karthikeyang.vercel.app" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-cyan-300 hover:underline hover:text-white transition-colors flex items-center gap-1"
+            <button
+              onClick={onClose}
+              className="p-1.5 sm:p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+              title="Close"
             >
-              https://karthikeyang.vercel.app
-            </a>
+              <X className="h-5 w-5" />
+            </button>
           </div>
         </div>
+
+        {/* Modal Scrollable Body */}
+        <div className="p-5 sm:p-7 space-y-6">
+          {/* Creator Spotlight Card with Direct Portfolio Link */}
+          <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-[#090d16] via-[#0b101c] to-[#0e1628] border border-cyan-500/40 space-y-4 shadow-lg shadow-cyan-950/20">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30">
+                    Lead Creator & Cloud Architect
+                  </span>
+                  <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-mono">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Verified
+                  </span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-white mt-1 tracking-tight">
+                  Karthikeyan G
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Google Cloud Platform • Intelligent Code Analysis • Serverless Architectures
+                </p>
+              </div>
+
+              {/* Direct Portfolio Link Button */}
+              <a
+                href="https://karthikeyang.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-mono text-xs font-bold shadow-lg shadow-cyan-500/25 transition-all shrink-0 group"
+              >
+                <Globe className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+                <span>Visit Portfolio</span>
+                <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+              </a>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+              <div className="flex items-center gap-2 text-slate-300">
+                <span className="text-slate-500">Portfolio Website:</span>
+                <a 
+                  href="https://karthikeyang.vercel.app" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-cyan-300 hover:underline hover:text-white transition-colors flex items-center gap-1 font-semibold"
+                >
+                  https://karthikeyang.vercel.app
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+              <span className="text-[11px] text-slate-400">Continuous AI & Cloud Engineering</span>
+            </div>
+          </div>
 
         {/* Project Description (Exact User Specification) */}
         <div className="space-y-3">
@@ -157,18 +182,40 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({ isOpen, onClose }) =
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-800 text-xs font-mono">
-          <span className="text-slate-500">
-            24/7 Intelligent Code Reviewer • Karthikeyan G
-          </span>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
-          >
-            Close
-          </button>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800 text-xs font-mono">
+          <div className="flex items-center gap-2 text-slate-400">
+            <span>Creator: <strong className="text-slate-200">Karthikeyan G</strong></span>
+            <span>•</span>
+            <a
+              href="https://karthikeyang.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-400 hover:underline hover:text-white flex items-center gap-1"
+            >
+              karthikeyang.vercel.app
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <a
+              href="https://karthikeyang.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>Portfolio</span>
+            </a>
+            <button
+              onClick={onClose}
+              className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  </div>
   );
 };

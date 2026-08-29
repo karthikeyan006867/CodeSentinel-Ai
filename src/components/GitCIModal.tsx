@@ -29,14 +29,14 @@ export const GitCIModal: React.FC<GitCIModalProps> = ({
   onClose,
   onTriggerWebhookSim,
   isSimulatingWebhook,
-  gitOwner = 'karthikeyan006867',
+  gitOwner = 'cloud-enterprise',
   setGitOwner,
-  gitRepo = '24-7-intelligent-code-reviewer',
+  gitRepo = 'intelligent-reviewer',
   setGitRepo
 }) => {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
-  const [localOwner, setLocalOwner] = useState(gitOwner || 'karthikeyan006867');
-  const [localRepo, setLocalRepo] = useState(gitRepo || '24-7-intelligent-code-reviewer');
+  const [localOwner, setLocalOwner] = useState(gitOwner || 'cloud-enterprise');
+  const [localRepo, setLocalRepo] = useState(gitRepo || 'intelligent-reviewer');
 
   useEffect(() => {
     if (gitOwner) setLocalOwner(gitOwner);
@@ -87,8 +87,8 @@ gcloud run deploy code-reviewer \\
   --allow-unauthenticated`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-3xl rounded-2xl bg-[#0d1322] border border-slate-700/80 shadow-2xl p-6 space-y-5 my-8">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start animate-in fade-in duration-200">
+      <div className="relative w-full max-w-3xl rounded-2xl bg-[#0d1322] border border-slate-700/80 shadow-2xl p-5 sm:p-6 space-y-5 my-2 sm:my-8 animate-in zoom-in-95 duration-200">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">

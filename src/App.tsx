@@ -38,6 +38,7 @@ import {
   RecurringAntiPattern 
 } from './types';
 import { detectCodeLanguage, DetectedLanguage } from './utils/languageDetector';
+import { downloadReport } from './utils/reportExporter';
 
 export default function App() {
   // Preset & Editor State
@@ -51,8 +52,14 @@ export default function App() {
   const [prNumber, setPrNumber] = useState<number>(42);
 
   // Dynamic Git Target State
-  const [gitOwner, setGitOwner] = useState<string>(() => localStorage.getItem('git_owner') || 'karthikeyan006867');
-  const [gitRepo, setGitRepo] = useState<string>(() => localStorage.getItem('git_repo') || '24-7-intelligent-code-reviewer');
+  const [gitOwner, setGitOwner] = useState<string>(() => {
+    const stored = localStorage.getItem('git_owner');
+    return (stored && stored !== 'karthikeyan006867') ? stored : 'cloud-enterprise';
+  });
+  const [gitRepo, setGitRepo] = useState<string>(() => {
+    const stored = localStorage.getItem('git_repo');
+    return (stored && stored !== '24-7-intelligent-code-reviewer') ? stored : 'intelligent-reviewer';
+  });
 
   // Detected Language State (ANN / Lexical)
   const [detectedLang, setDetectedLang] = useState<DetectedLanguage | null>(() => 
@@ -292,45 +299,64 @@ export default function App() {
     }
   };
 
+  // Export current review report (JSON or Markdown)
+  const handleDownloadReport = (format: 'json' | 'markdown') => {
+    if (!reviewResult) {
+      showToast('Please wait for code review to finish before downloading the report.');
+      return;
+    }
+    try {
+      downloadReport(reviewResult, format);
+      showToast(`Exported review report as ${format.toUpperCase()} successfully.`);
+    } catch (err) {
+      console.error('Failed to export review report:', err);
+      showToast('Failed to export review report.');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
       {/* Dynamic Navigation Bar */}
       <Navbar
         onOpenArchitecture={() => setShowArchModal(true)}
         onOpenHistory={() => setShowHistoryModal(true)}
         onOpenGitModal={() => setShowGitModal(true)}
+        onOpenCreator={() => setShowCreatorModal(true)}
+        onDownloadReport={handleDownloadReport}
+        hasReviewResult={Boolean(reviewResult)}
+        isReviewing={isReviewing}
         pipelineRunning={isReviewing}
         gitOwner={gitOwner}
         gitRepo={gitRepo}
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 overflow-hidden">
         {/* Header Hero Section */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#0d1322]/90 border border-slate-800/90 rounded-2xl p-5 sm:px-6 shadow-2xl">
-          <div>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#0d1322]/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 lg:px-6 shadow-2xl w-full max-w-full overflow-hidden">
+          <div className="min-w-0 w-full md:w-auto">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/80 px-2.5 py-0.5 rounded-full border border-cyan-500/30 flex items-center gap-1.5">
+              <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/80 px-2.5 py-0.5 rounded-full border border-cyan-500/30 flex items-center gap-1.5 shrink-0">
                 <Cpu className="h-3 w-3" />
                 ANN + VERTEX AI GEMINI FLASH LITE
               </span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-400 truncate">
                 Autonomous Multi-Language Quality Evaluation & CI/CD Gatekeeper
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1.5 flex items-center gap-2">
+            <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight mt-1.5 flex items-center gap-2 flex-wrap">
               <span>24/7 Intelligent Code Reviewer</span>
-              <span className="text-xs font-mono font-normal text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
+              <span className="text-[10px] sm:text-xs font-mono font-normal text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
                 v2.5 Autonomous
               </span>
             </h1>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
             <button
               onClick={handleAutoFix}
               disabled={isReviewing}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-xs font-mono font-bold text-white shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
+              className="flex-1 sm:flex-none justify-center px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-xs font-mono font-bold text-white shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all shrink-0"
             >
               <Wand2 className="h-3.5 w-3.5" />
               <span>⚡ Auto-Fix Code</span>
@@ -338,16 +364,17 @@ export default function App() {
 
             <button
               onClick={() => setShowGitModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300 hover:text-white transition-all flex items-center gap-2 shadow-sm"
+              className="flex-1 sm:flex-none justify-center px-3 sm:px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300 hover:text-white transition-all flex items-center gap-1.5 shadow-sm truncate max-w-full"
+              title="Configure Git Target Repository"
             >
-              <GitBranch className="h-4 w-4 text-emerald-400" />
-              <span>{gitOwner}/{gitRepo}</span>
+              <GitBranch className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+              <span className="truncate max-w-[130px] sm:max-w-[190px]">{gitOwner}/{gitRepo}</span>
             </button>
 
             <button
               onClick={() => runReview(code, language, filename, false)}
               disabled={isReviewing}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-xs font-mono font-bold text-white shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all"
+              className="flex-1 sm:flex-none justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-xs font-mono font-bold text-white shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all shrink-0"
             >
               <Sparkles className="h-4 w-4" />
               <span>{isReviewing ? 'Analyzing...' : 'Run Review'}</span>
@@ -387,41 +414,44 @@ export default function App() {
         )}
 
         {/* Workspace View Switcher (Editor vs Full Refactor vs Cloud Telemetry) */}
-        <div className="flex items-center justify-between bg-[#0d1322] border border-slate-800/80 p-1.5 rounded-xl font-mono text-xs max-w-md">
+        <div className="flex items-center justify-between bg-[#0d1322] border border-slate-800/80 p-1 sm:p-1.5 rounded-xl font-mono text-xs max-w-md w-full">
           <button
             onClick={() => setActiveTab('editor')}
-            className={`flex-1 py-1.5 rounded-lg text-center font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-1.5 px-2 rounded-lg text-center font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
               activeTab === 'editor'
                 ? 'bg-slate-800 text-cyan-300 border border-slate-700 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Code2 className="h-3.5 w-3.5" />
-            <span>Interactive Editor</span>
+            <Code2 className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">Interactive Editor</span>
+            <span className="inline sm:hidden">Editor</span>
           </button>
 
           <button
             onClick={() => setActiveTab('diff')}
-            className={`flex-1 py-1.5 rounded-lg text-center font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-1.5 px-2 rounded-lg text-center font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
               activeTab === 'diff'
                 ? 'bg-slate-800 text-emerald-300 border border-slate-700 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <GitCompare className="h-3.5 w-3.5" />
-            <span>AI Refactored Diff</span>
+            <GitCompare className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">AI Refactored Diff</span>
+            <span className="inline sm:hidden">AI Diff</span>
           </button>
 
           <button
             onClick={() => setActiveTab('telemetry')}
-            className={`flex-1 py-1.5 rounded-lg text-center font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-1.5 px-2 rounded-lg text-center font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
               activeTab === 'telemetry'
                 ? 'bg-slate-800 text-indigo-300 border border-slate-700 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Activity className="h-3.5 w-3.5" />
-            <span>ANN & GCP Gate</span>
+            <Activity className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">ANN & GCP Gate</span>
+            <span className="inline sm:hidden">Telemetry</span>
           </button>
         </div>
 
@@ -516,9 +546,9 @@ export default function App() {
       </main>
 
       {/* Footer with Creator Area & Actions */}
-      <footer className="w-full border-t border-slate-800/80 bg-[#080c14] py-6 px-4 sm:px-8 mt-12 text-xs font-mono text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
+      <footer className="w-full max-w-full border-t border-slate-800/80 bg-[#080c14] py-6 px-4 sm:px-8 mt-12 text-xs font-mono text-slate-500 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
             <ShieldCheck className="h-4 w-4 text-cyan-400" />
             <span className="text-slate-300 font-semibold">The 24/7 Intelligent Code Reviewer</span>
             <span>•</span>
@@ -526,7 +556,7 @@ export default function App() {
           </div>
 
           {/* Down Creator Area: Interactive Creator Button */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => setShowCreatorModal(true)}
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-950/80 via-slate-900 to-indigo-950/80 hover:from-cyan-900/90 hover:to-indigo-900/90 text-cyan-300 hover:text-white border border-cyan-500/40 hover:border-cyan-400 text-xs font-mono font-bold transition-all shadow-md shadow-cyan-950/40 group"
@@ -540,13 +570,14 @@ export default function App() {
             </button>
           </div>
 
-          <div className="flex items-center gap-4 text-slate-400">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 sm:gap-4 text-slate-400">
             <button 
               onClick={() => setShowGitModal(true)} 
-              className="hover:text-emerald-300 text-slate-300 flex items-center gap-1 transition-colors"
+              className="hover:text-emerald-300 text-slate-300 flex items-center gap-1 transition-colors truncate max-w-[220px]"
+              title="Configure Git Target"
             >
-              <GitBranch className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Target: {gitOwner}/{gitRepo}</span>
+              <GitBranch className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+              <span className="truncate">Target: {gitOwner}/{gitRepo}</span>
             </button>
             <span>•</span>
             <button onClick={() => setShowArchModal(true)} className="hover:text-cyan-300 transition-colors">

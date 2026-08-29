@@ -50,8 +50,8 @@ export const HistoricalLearningModal: React.FC<HistoricalLearningModalProps> = (
     : 84;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#090d16] border border-slate-800 shadow-2xl p-6 text-slate-200 space-y-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl my-2 sm:my-8 rounded-3xl bg-[#090d16] border border-slate-800 shadow-2xl p-5 sm:p-6 text-slate-200 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">

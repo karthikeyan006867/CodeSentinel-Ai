@@ -72,21 +72,21 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
   return (
     <div className="w-full rounded-2xl bg-[#0d1322] border border-slate-800/80 p-4 sm:p-5 shadow-xl shadow-black/20 space-y-4">
       {/* Top row: Presets Quick Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-800/60 w-full">
+        <div className="flex items-center gap-2 shrink-0">
           <Flame className="h-4 w-4 text-amber-400" />
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
             Defect Presets:
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {CODE_PRESETS.map((preset) => {
             const isSelected = selectedPresetId === preset.id;
             return (
               <button
                 key={preset.id}
                 onClick={() => onSelectPreset(preset)}
-                className={`text-xs px-2.5 py-1 rounded-lg transition-all border font-mono flex items-center gap-1.5 ${
+                className={`text-xs px-2 sm:px-2.5 py-1 rounded-lg transition-all border font-mono flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm shadow-cyan-500/10'
                     : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700'
@@ -258,10 +258,11 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({
         <button
           onClick={onAutoFix}
           disabled={isReviewing}
-          className="w-full sm:w-auto px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-mono text-xs font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all"
+          className="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-mono text-xs font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all shrink-0"
         >
           <Wand2 className="h-3.5 w-3.5" />
-          <span>⚡ Auto-Fix Code (ANN + Gemini Lite)</span>
+          <span className="hidden sm:inline">⚡ Auto-Fix Code (ANN + Gemini Lite)</span>
+          <span className="inline sm:hidden">⚡ Auto-Fix Code</span>
         </button>
       </div>
     </div>
