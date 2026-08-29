@@ -30,19 +30,17 @@ app.use((req, res, next) => {
 });
 
 // Initialize Gemini SDK with User-Agent header as required
-let aiClient: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI | null {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
       },
-    });
-  }
-  return aiClient;
+    },
+  });
 }
 
 // In-memory persistent state (simulating Firestore collections)
@@ -598,10 +596,12 @@ Perform a comprehensive multi-language review covering:
 Provide a concrete, actionable review with exact line numbers, impact explanations, fix suggestions, replacement code snippets, overall score (0-100), letter grade (A+, A, B, C, D, F), PR merge verdict (APPROVE, APPROVE_WITH_COMMENTS, REQUEST_CHANGES), and a fully refactored, corrected version of the code.`;
 
       // High-availability model cascade for Vertex AI Gemini
-      // Primary: gemini-3.1-flash-lite (fastest, high concurrency, zero queuing)
-      // Failover 1: gemini-3.7-flash
-      // Failover 2: gemini-flash-latest
+      // Primary: gemini-3.5-flash-lite (fastest, ultra-low latency, robust JSON output)
+      // Failover 1: gemini-3.1-flash-lite
+      // Failover 2: gemini-3.7-flash
+      // Failover 3: gemini-flash-latest
       const candidateModels = [
+        { id: 'gemini-3.5-flash-lite', name: 'Vertex AI Gemini 3.5 Flash-Lite' },
         { id: 'gemini-3.1-flash-lite', name: 'Vertex AI Gemini 3.1 Flash-Lite' },
         { id: 'gemini-3.7-flash', name: 'Vertex AI Gemini 3.7 Flash' },
         { id: 'gemini-flash-latest', name: 'Vertex AI Gemini Flash (Replica)' }
@@ -611,7 +611,7 @@ Provide a concrete, actionable review with exact line numbers, impact explanatio
         try {
           const geminiStart = Date.now();
           const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error(`Timeout on model ${candidate.id}`)), 12000)
+            setTimeout(() => reject(new Error(`Timeout on model ${candidate.id}`)), 20000)
           );
 
           const response: any = await Promise.race([
